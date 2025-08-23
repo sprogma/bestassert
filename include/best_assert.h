@@ -24,7 +24,6 @@ extern "C" {
 	                            "\n    Oh no! best assertation occured!\n"); \
 	            fprintf(stderr, "AT: %s:%s:%d: expression (%s) == false\n", __FILE__, __FUNCTION__, __LINE__, #expr); \
 	            bestassert_run_gdb(0); \
-	            bestassert_attach(); \
 	            bestassert_request(); \
 	            __asm__ __volatile__ ("int $3"); \
 	            int rungdb = bestassert_update(); \
@@ -53,7 +52,6 @@ extern "C" {
 	                            "\n    Oh no! best assertation occured!\n"); \
 	            fprintf(stderr, "AT: %s:%s:%d: expression (%s) == false\n", __FILE__, __FUNCTION__, __LINE__, #expr); \
 	            bestassert_run_gdb(0); \
-	            bestassert_attach(); \
 	            bestassert_request(); \
 	            __asm__ __volatile__ ("int $3"); \
 	            int rungdb = bestassert_update(); \
@@ -76,7 +74,7 @@ extern "C" {
 
 
 #ifdef WIN32
-    EXPORT void bestassert_run_gdb(int pid_to_attach);
+    EXPORT void bestassert_run_gdb(int user_friendly);
 #else
     EXPORT void bestassert_run_gdb(pid_t pid_to_attach);
 #endif

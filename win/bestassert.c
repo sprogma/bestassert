@@ -13,8 +13,6 @@
 
 
 
-
-
 PROCESS_INFORMATION gdb = {};
 HANDLE hChildStdoutRd = NULL;
 HANDLE hChildStdinWr = NULL;
@@ -31,8 +29,7 @@ HANDLE hChildStdinWr = NULL;
 }
 
 
-
- void bestassert_send_text(const char *commands)
+void bestassert_send_text(const char *commands)
 {
     DWORD written = 0;
     if (!WriteFile(hChildStdinWr, commands, strlen(commands), &written, NULL)) 
@@ -42,9 +39,10 @@ HANDLE hChildStdinWr = NULL;
 }
 
 
-
-void bestassert_run_gdb(int pid_to_attach)
+void bestassert_run_gdb(int user_friendly)
 {   
+    int pid_to_attach = GetCurrentProcessId();
+    
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
     HANDLE hChildStdinRd = NULL;
@@ -53,7 +51,6 @@ void bestassert_run_gdb(int pid_to_attach)
         printf("CreatePipe error. exiting...\n");
         exit(4);
     }
-
 
     HANDLE hChildStdoutWr = NULL;
     if (!CreatePipe(&hChildStdoutRd, &hChildStdoutWr, &sa, 0)) 
@@ -65,44 +62,33 @@ void bestassert_run_gdb(int pid_to_attach)
     SetHandleInformation(hChildStdinWr, HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(hChildStdoutRd, HANDLE_FLAG_INHERIT, 0);
 
+    char app[1024];
+    BOOL inerhit_handles = FALSE;
     STARTUPINFO si = {};
     si.cb = sizeof(si);
-    if (!pid_to_attach)
+    if (!user_friendly)
     {
-        char app[] = "gdb --silent -i=mi";
+        snprintf(app, sizeof(app), "gdb attach %d -ex cont --silent -i=mi", pid_to_attach);
         si.dwFlags = STARTF_USESTDHANDLES;
         si.hStdInput = hChildStdinRd;
         si.hStdOutput = hChildStdoutWr;
         si.hStdError = hChildStdoutWr;
-        if (!CreateProcess(NULL, app, NULL, NULL, TRUE,
-                            0, NULL, NULL, &si, &gdb))
-        {
-            printf("CreateProcess failed: %lu\n", GetLastError());
-            exit(4);
-        }
+        inerhit_handles = TRUE;
     }
     else
     {
-        char app[1024];
-        sprintf(app, "gdb attach %d -ex cont", pid_to_attach);
-        if (!CreateProcess(NULL, app, NULL, NULL, FALSE,
-                            CREATE_NEW_CONSOLE, NULL, NULL, &si, &gdb))
-        {
-            printf("CreateProcess failed: %lu\n", GetLastError());
-            exit(4);
-        }
+        snprintf(app, sizeof(app), "gdb attach %d -ex cont", pid_to_attach);
+    }
+    
+    if (!CreateProcess(NULL, app, NULL, NULL, inerhit_handles,
+                        0, NULL, NULL, &si, &gdb))
+    {
+        printf("CreateProcess failed: %lu\n", GetLastError());
+        exit(4);
     }
     
     CloseHandle(hChildStdinRd);
     CloseHandle(hChildStdoutWr);
-}
-
-void bestassert_attach()
-{
-    char input[1024] = {};
-    sprintf(input, "attach %ld\n"
-                   "continue\n", GetCurrentProcessId());
-    bestassert_send_text(input);
 }
 
 
@@ -123,7 +109,8 @@ int bestassert_gdbchar()
     BOOL ok = ReadFile(hChildStdoutRd, buffer, 1, &readBytes, NULL);
     if (!ok || readBytes == 0)
     {
-        return -1;
+        printf("Error: read EOF or channel is broken.\n");
+        exit(4);
     }
     return buffer[0];
 }
@@ -138,5 +125,3 @@ void bestassert_wait_to_close()
     hChildStdoutRd = NULL;
     hChildStdinWr = NULL;
 }
-
-

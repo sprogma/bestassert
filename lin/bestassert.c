@@ -18,8 +18,57 @@ pid_t gdb_pid = 0;
 int child_stdin_pipe[2] = {};
 int child_stdout_pipe[2] = {};
 
+/* check /proc/self/status/TracerPid */
+static int check_tracerpid() 
+{
+    FILE *f = fopen("/proc/self/status", "r");
+    if (!f)
+    {
+        printf("Error: no access to file /proc/self/status\n");
+        exit(4);
+    }
+    
+    char line[1024];
 
-int make_nonblock(int fd)
+    int tracer_pid = 0;
+    
+    while (fgets(line, sizeof(line), f)) 
+    {
+        if (strncmp(line, "TracerPid:", 10) == 0) 
+        {
+            char *p = line + 10;
+            while (isblank(*p))
+            {
+                ++p;
+            }
+            tracer_pid = atoi(p);
+            break;
+        }
+    }
+    
+    fclose(f);
+    
+    return tracer_pid != 0;
+}
+
+
+static int is_debugger_present_linux(void) 
+{
+    return check_tracerpid();
+}
+
+
+
+void bestassert_bestspinlock()
+{
+    while (!is_debugger_present_linux())
+    {
+        usleep(50 * 1000);
+    }
+}
+
+
+static int make_nonblock(int fd)
 {
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags == -1)
@@ -30,21 +79,11 @@ int make_nonblock(int fd)
 }
 
 
-
-void bestassert_bestspinlock()
-{
-    /* no, premium doesn't helps */
-    sleep(3);
-}
-
-
-
 void bestassert_send_text(const char *commands)
 {
     ssize_t nwrited = write(child_stdin_pipe[1], commands, strlen(commands));
     (void)nwrited;
 }
-
 
 
 void bestassert_run_gdb(int pid_to_attach)
@@ -128,14 +167,7 @@ void bestassert_run_gdb(int pid_to_attach)
 
     make_nonblock(child_stdout_pipe[0]);
 }
-
-void bestassert_attach()
-{
-    /**/
-}
     
-
-
 int bestassert_gdbchar()
 {
     char c;
@@ -175,5 +207,3 @@ void bestassert_wait_to_close()
     memset(child_stdout_pipe, 0, sizeof(child_stdout_pipe));
     memset(child_stdin_pipe, 0, sizeof(child_stdin_pipe));
 }
-
-
