@@ -16,17 +16,17 @@
 PROCESS_INFORMATION gdb = {};
 HANDLE hChildStdoutRd = NULL;
 HANDLE hChildStdinWr = NULL;
-    
 
 
 
- void bestassert_bestspinlock()
+void bestassert_bestspinlock()
 {
     while (!IsDebuggerPresent())
     {
         Sleep(50);
     }
 }
+
 
 
 void bestassert_send_text(const char *commands)
@@ -92,6 +92,7 @@ void bestassert_run_gdb(int user_friendly)
 }
 
 
+
 int bestassert_gdbchar()
 {
     DWORD readBytes;
@@ -114,6 +115,7 @@ int bestassert_gdbchar()
     }
     return buffer[0];
 }
+
 
 
 void bestassert_wait_to_close()

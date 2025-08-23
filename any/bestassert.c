@@ -9,20 +9,28 @@
 #include "best_assert_local.h"
 
 
-
     
 void bestassert_request()
 {
-    char input[1024] = {};
+    char input[2048] = {};
+
+    /* read info file */
     sprintf(input, "bt 99\n"
-                   "info locals\n"
-                   "continue\n");
+                   "info locals\n");
+    // for (int i = 0; i < n; ++i)
+    // {
+    //     sprintf(input + strlen(input), "continue\n");
+    // }
+    sprintf(input + strlen(input), "continue\n");
+    
     bestassert_send_text(input);
 
     /* wait for connection... */
     printf("waiting...\n");
     bestassert_bestspinlock();
 }
+
+
 int bestassert_update()
 {
     /* read while there is no &bt */
@@ -151,15 +159,16 @@ int bestassert_update()
 }
 
 
+
 void bestassert_connect_gdb()
 {
     printf("Starting gdb... [don't look at the logs about closing :)]\n");
 
     /* set console gdb input and output handles on this process handles? */
     #ifdef WIN32
-    if (gdb.hProcess)
+        if (gdb.hProcess)
     #else
-    if (gdb_pid != 0)
+        if (gdb_pid != 0)
     #endif
     {
         bestassert_close_gdb();
@@ -179,6 +188,7 @@ void bestassert_connect_gdb()
     bestassert_bestspinlock();
     printf("Establish connection...\n");
 }
+
 
 
 void bestassert_close_gdb()
