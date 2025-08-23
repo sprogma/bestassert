@@ -1,4 +1,24 @@
+
+# build game :)
+gcc game/game.c -o game 2>$null
+
+# build assert
 $F = @("-Wall", "-Wextra")
-gcc $F -O0 -g -c a.c -o a.o
-gcc $F -O0 -g -c myassert.c -o myassert.o
-gcc $F -O0 -g a.o myassert.o -o ($IsWindows ?"a.exe":"a")
+$L = @()
+$F += @("-Iinclude")
+
+if (!$IsWindows)
+{
+    $F += @("-fPIC", "-fpic")
+    $L += @("-fPIC", "-fpic")
+}
+else
+{
+    $F += @("-DLIBRARY_EXPORT")
+}
+
+$platform = ($IsWindows ?"win":"lin")
+
+gcc $F -O0 -g -c any/bestassert.c -o any/bestassert.o
+gcc $F -O0 -g -c $platform/bestassert.c -o $platform/bestassert.o
+gcc $L $platform/bestassert.o any/bestassert.o -shared -o "$($IsWindows ?'':'lib')bestassert.$($IsWindows ?'dll':'so')"

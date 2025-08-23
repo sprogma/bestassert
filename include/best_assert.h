@@ -1,7 +1,20 @@
+#ifndef BEST_ASSERT
+#define BEST_ASSERT
+
 #include "stdlib.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #ifdef WIN32
+    #ifdef LIBRARY_EXPORT
+    #    define EXPORT __declspec(dllexport)
+    #else
+    #    define EXPORT __declspec(dllimport)
+    #endif
 	#define BESTASSERT(expr) \
 	    do \
 	    { \
@@ -30,6 +43,7 @@
 	    } \
 	    while (0);
 #else
+    #define EXPORT
 	#define BESTASSERT(expr) \
 	    do \
 	    { \
@@ -59,15 +73,22 @@
 	    while (0);
 #endif
 
-#ifdef WIN32
-    void bestassert_run_gdb(int pid_to_attach);
-#else
-    void bestassert_run_gdb(pid_t pid_to_attach);
-#endif
-void bestassert_attach();
-void bestassert_request();
-int bestassert_update();
-void bestassert_connect_gdb();
-void bestassert_close_gdb();
-void bestassert_wait_to_close();
 
+
+#ifdef WIN32
+    EXPORT void bestassert_run_gdb(int pid_to_attach);
+#else
+    EXPORT void bestassert_run_gdb(pid_t pid_to_attach);
+#endif
+EXPORT void bestassert_attach();
+EXPORT void bestassert_request();
+EXPORT int bestassert_update();
+EXPORT void bestassert_connect_gdb();
+EXPORT void bestassert_close_gdb();
+EXPORT void bestassert_wait_to_close();
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
