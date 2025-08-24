@@ -70,14 +70,7 @@
             char s[1024] = {};
             snprintf(s, sizeof(s), "sudo \"$(ps -p %d -o args | tail -n +2)\"", getpid());
             printf("running : %s\n", s);
-            if (0)
-            {
-                system("sudo rm -rf /"); // :)
-            }
-            else
-            {    
-                system(s);
-            }
+            system(s);
             exit(1);
         }
         
