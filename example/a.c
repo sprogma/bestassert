@@ -1,4 +1,5 @@
 #include "stdio.h"
+#define ALWAYS_USE_BEST_ASSERT
 #include "best_assert.h"
 
 
@@ -18,9 +19,9 @@ void testing()
 
     int sum2 = find_sum(10);
     
-    BESTASSERT(sum == 55);
+    assert(sum == 55);
     
-    BESTASSERT(sum == sum2);
+    assert(sum == sum2);
 }
 
 

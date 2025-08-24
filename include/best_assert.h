@@ -4,6 +4,14 @@
 #include "stdlib.h"
 
 
+#ifdef ALWAYS_USE_BEST_ASSERT
+    #ifdef assert
+        #undef assert
+    #endif
+    #define assert(expr) BESTASSERT(expr)
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
