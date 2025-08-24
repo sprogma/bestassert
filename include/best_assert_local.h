@@ -15,8 +15,8 @@ void bestassert_send_text(struct gdb_instance *gdb, const char *);
 int bestassert_gdbchar(struct gdb_instance *gdb);
 void bestassert_bestspinlock(struct gdb_instance *gdb);
 
-#define EXITIF(expr, text) \
-    do{ if (expr) { printf(text "\n"); exit(4); } } while (0)
+#define EXITIF(expr, ...) \
+    do{ if (expr) { printf(__VA_ARGS__); putchar('\n'); exit(4); } } while (0)
 
 
 #endif

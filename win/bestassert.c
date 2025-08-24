@@ -32,10 +32,8 @@ void bestassert_bestspinlock(struct gdb_instance *gdb)
 void bestassert_send_text(struct gdb_instance *gdb, const char *commands)
 {
     DWORD written = 0;
-    if (!WriteFile(gdb->hChildStdinWr, commands, strlen(commands), &written, NULL)) 
-    {
-        printf("WriteFile to stdin failed: %lu\n", GetLastError());
-    }
+    EXITIF(!WriteFile(gdb->hChildStdinWr, commands, strlen(commands), &written, NULL),
+            "WriteFile to stdin failed: %lu", GetLastError());
 }
 
 
@@ -46,18 +44,12 @@ void bestassert_run_gdb(struct gdb_instance *gdb, int user_friendly)
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
     HANDLE hChildStdinRd = NULL;
-    if (!CreatePipe(&hChildStdinRd, &gdb->hChildStdinWr, &sa, 0))
-    {
-        printf("CreatePipe error. exiting...\n");
-        exit(4);
-    }
+    EXITIF(!CreatePipe(&hChildStdinRd, &gdb->hChildStdinWr, &sa, 0),
+           "CreatePipe error.");
 
     HANDLE hChildStdoutWr = NULL;
-    if (!CreatePipe(&gdb->hChildStdoutRd, &hChildStdoutWr, &sa, 0)) 
-    {
-        printf("CreatePipe error. exiting...\n");
-        exit(4);
-    }
+    EXITIF(!CreatePipe(&gdb->hChildStdoutRd, &hChildStdoutWr, &sa, 0),
+           "CreatePipe error.");
 
     SetHandleInformation(gdb->hChildStdinWr, HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(gdb->hChildStdoutRd, HANDLE_FLAG_INHERIT, 0);
@@ -84,12 +76,9 @@ void bestassert_run_gdb(struct gdb_instance *gdb, int user_friendly)
         #endif
     }
     
-    if (!CreateProcess(NULL, app, NULL, NULL, inerhit_handles,
-                        flags, NULL, NULL, &si, &gdb->gdb))
-    {
-        printf("CreateProcess failed: %lu\n", GetLastError());
-        exit(4);
-    }
+    EXITIF(!CreateProcess(NULL, app, NULL, NULL, inerhit_handles,
+                        flags, NULL, NULL, &si, &gdb->gdb),
+           "CreateProcess failed: %lu", GetLastError());
     
     CloseHandle(hChildStdinRd);
     CloseHandle(hChildStdoutWr);
@@ -101,22 +90,16 @@ int bestassert_gdbchar(struct gdb_instance *gdb)
 {
     DWORD readBytes;
     DWORD availableBytes = 0;
-    if (!PeekNamedPipe(gdb->hChildStdoutRd, NULL, 0, NULL, &availableBytes, NULL))
-    {
-        printf("PeekNamedPipe error!?\n");
-        exit(4);
-    }
+    EXITIF(!PeekNamedPipe(gdb->hChildStdoutRd, NULL, 0, NULL, &availableBytes, NULL),
+           "PeerNamedPipe error!?");
     if (availableBytes == 0)
     {
         return -1;
     }
     CHAR buffer[1] = {};
     BOOL ok = ReadFile(gdb->hChildStdoutRd, buffer, 1, &readBytes, NULL);
-    if (!ok || readBytes == 0)
-    {
-        printf("Error: read EOF or channel is broken.\n");
-        exit(4);
-    }
+    EXITIF(!ok || readBytes == 0,
+           "Error: read EOF or channel is broken.");
     return buffer[0];
 }
 
