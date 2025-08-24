@@ -61,7 +61,17 @@
 
     __attribute__((constructor))
     void signal_handler_init()
-    {        
+    {
+        #ifndef WIN32
+            uid_t euid = geteuid();
+            if (euid != 0)
+            {
+                printf("This program cannot run [in DOS mode].\n");
+                printf("Run it using sudo\n");
+                exit(1);
+            }
+        #endif
+        
         static int not_enabled = 1;
         if (not_enabled)
         {

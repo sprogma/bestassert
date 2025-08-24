@@ -3,7 +3,7 @@ param(
 )
 
 # build game :)
-gcc game/game.c -o game 2>$null
+gcc game/game.c -o inner_game$($IsWindows ?'.exe':'') 2>$null
 
 # build assert
 $build = @()
@@ -26,18 +26,21 @@ $platform = ($IsWindows ?"win":"lin")
 
 
 
+Write-Host -- gcc $F -O0 -g -c any/bestassert.c -o any/bestassert.o
 gcc $F -O0 -g -c any/bestassert.c -o any/bestassert.o
+
 $build += "any/bestassert.o"
 
+Write-Host -- gcc $F -O0 -g -c $platform/bestassert.c -o $platform/bestassert.o
 gcc $F -O0 -g -c $platform/bestassert.c -o $platform/bestassert.o
+
 $build += "$platform/bestassert.o"
 
-if (Test-Path $platform/signals.c)
-{
-    gcc $F -O0 -g -c $platform/signals.c -o $platform/signals.o
-    $build += "$platform/signals.o"
-}
+Write-Host -- gcc $F -O0 -g -c $platform/signals.c -o $platform/signals.o
+gcc $F -O0 -g -c $platform/signals.c -o $platform/signals.o
 
-Write-Host "Builded: $build."
+$build += "$platform/signals.o"
 
+
+Write-Host -- gcc $L $build -shared -o "$($IsWindows ?'':'lib')bestassert.$($IsWindows ?'dll':'so')"
 gcc $L $build -shared -o "$($IsWindows ?'':'lib')bestassert.$($IsWindows ?'dll':'so')"

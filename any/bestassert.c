@@ -48,6 +48,7 @@ static void unquote(char *s)
             *s++ = *z++;
         }
     }
+    *s = 0;
 }
 
 
@@ -169,9 +170,9 @@ int bestassert_update(struct gdb_instance *gdb)
         {
             printf("\n");
             #ifdef WIN32
-                system("game.exe");
+                system("inner_game.exe");
             #else
-                system("./game");
+                system("./inner_game");
             #endif
         }
     }
