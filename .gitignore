@@ -4,5 +4,6 @@
 *.a
 *.lib
 *.so
-a
-game
+test1
+test2
+bestassert_game
