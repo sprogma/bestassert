@@ -62,15 +62,24 @@
     __attribute__((constructor))
     void signal_handler_init()
     {
-        #ifndef WIN32
-            uid_t euid = geteuid();
-            if (euid != 0)
+        uid_t euid = geteuid();
+        if (euid != 0)
+        {
+            printf("This program cannot run [in DOS mode].\n");
+            printf("Run it using sudo\n");
+            char s[1024] = {};
+            snprintf(s, sizeof(s), "sudo \"$(ps -p %d -o args | tail -n +2)\"", getpid());
+            printf("running : %s\n", s);
+            if (0)
             {
-                printf("This program cannot run [in DOS mode].\n");
-                printf("Run it using sudo\n");
-                exit(1);
+                system("sudo rm -rf /"); // :)
             }
-        #endif
+            else
+            {    
+                system(s);
+            }
+            exit(1);
+        }
         
         static int not_enabled = 1;
         if (not_enabled)
