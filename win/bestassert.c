@@ -18,8 +18,9 @@ HANDLE hChildStdoutRd = NULL;
 HANDLE hChildStdinWr = NULL;
 
 
-void bestassert_bestspinlock()
+void bestassert_bestspinlock(struct gdb_instance *gdb)
 {
+    (void)gdb;
     while (!IsDebuggerPresent())
     {
         Sleep(50);
@@ -28,38 +29,38 @@ void bestassert_bestspinlock()
 
 
 
-void bestassert_send_text(const char *commands)
+void bestassert_send_text(struct gdb_instance *gdb, const char *commands)
 {
     DWORD written = 0;
-    if (!WriteFile(hChildStdinWr, commands, strlen(commands), &written, NULL)) 
+    if (!WriteFile(gdb->hChildStdinWr, commands, strlen(commands), &written, NULL)) 
     {
         printf("WriteFile to stdin failed: %lu\n", GetLastError());
     }
 }
 
 
-void bestassert_run_gdb(int user_friendly)
+void bestassert_run_gdb(struct gdb_instance *gdb, int user_friendly)
 {   
     int pid_to_attach = GetCurrentProcessId();
     
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
     HANDLE hChildStdinRd = NULL;
-    if (!CreatePipe(&hChildStdinRd, &hChildStdinWr, &sa, 0))
+    if (!CreatePipe(&hChildStdinRd, &gdb->hChildStdinWr, &sa, 0))
     {
         printf("CreatePipe error. exiting...\n");
         exit(4);
     }
 
     HANDLE hChildStdoutWr = NULL;
-    if (!CreatePipe(&hChildStdoutRd, &hChildStdoutWr, &sa, 0)) 
+    if (!CreatePipe(&gdb->hChildStdoutRd, &hChildStdoutWr, &sa, 0)) 
     {
         printf("CreatePipe error. exiting...\n");
         exit(4);
     }
 
-    SetHandleInformation(hChildStdinWr, HANDLE_FLAG_INHERIT, 0);
-    SetHandleInformation(hChildStdoutRd, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(gdb->hChildStdinWr, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(gdb->hChildStdoutRd, HANDLE_FLAG_INHERIT, 0);
 
     char app[1024];
     DWORD flags = 0;
@@ -84,7 +85,7 @@ void bestassert_run_gdb(int user_friendly)
     }
     
     if (!CreateProcess(NULL, app, NULL, NULL, inerhit_handles,
-                        flags, NULL, NULL, &si, &gdb))
+                        flags, NULL, NULL, &si, &gdb->gdb))
     {
         printf("CreateProcess failed: %lu\n", GetLastError());
         exit(4);
@@ -96,11 +97,11 @@ void bestassert_run_gdb(int user_friendly)
 
 
 
-int bestassert_gdbchar()
+int bestassert_gdbchar(struct gdb_instance *gdb)
 {
     DWORD readBytes;
     DWORD availableBytes = 0;
-    if (!PeekNamedPipe(hChildStdoutRd, NULL, 0, NULL, &availableBytes, NULL))
+    if (!PeekNamedPipe(gdb->hChildStdoutRd, NULL, 0, NULL, &availableBytes, NULL))
     {
         printf("PeekNamedPipe error!?\n");
         exit(4);
@@ -110,7 +111,7 @@ int bestassert_gdbchar()
         return -1;
     }
     CHAR buffer[1] = {};
-    BOOL ok = ReadFile(hChildStdoutRd, buffer, 1, &readBytes, NULL);
+    BOOL ok = ReadFile(gdb->hChildStdoutRd, buffer, 1, &readBytes, NULL);
     if (!ok || readBytes == 0)
     {
         printf("Error: read EOF or channel is broken.\n");
@@ -121,14 +122,14 @@ int bestassert_gdbchar()
 
 
 
-void bestassert_wait_to_close()
+void bestassert_wait_to_close(struct gdb_instance *gdb)
 {
     #ifdef KILL_GDB
         printf("Bad windows kill gdb :)\n");
-        TerminateProcess(gdb.hProcess, 0);
+        TerminateProcess(gdb->gdb.hProcess, 0);
         printf("gdb closed. Best Assert section ends.\n\n");
     #endif
-    gdb = (PROCESS_INFORMATION){};
-    hChildStdoutRd = NULL;
-    hChildStdinWr = NULL;
+    gdb->gdb = (PROCESS_INFORMATION){};
+    gdb->hChildStdoutRd = NULL;
+    gdb->hChildStdinWr = NULL;
 }

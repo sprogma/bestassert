@@ -3,35 +3,18 @@
 
 #include "stdlib.h"
 
+#include "best_assert.h"
 
 #ifdef WIN32
     #include "conio.h"
-    #include "windows.h"
-    
-    extern PROCESS_INFORMATION gdb;
-    extern HANDLE hChildStdoutRd;
-    extern HANDLE hChildStdinWr;
-    
 #else
-    #include "unistd.h"
     #include "spawn.h"
-
-    extern pid_t gdb_pid;
-    extern int child_stdin_pipe[2];
-    extern int child_stdout_pipe[2];
 #endif
 
-void bestassert_send_text(const char *);
-int bestassert_gdbchar();
-void bestassert_bestspinlock();
+void bestassert_send_text(struct gdb_instance *gdb, const char *);
+int bestassert_gdbchar(struct gdb_instance *gdb);
+void bestassert_bestspinlock(struct gdb_instance *gdb);
 
 
-
-#ifdef ADD_SIGNAL_HANDLERS
-    #ifdef WIN32
-        __attribute__((constructor))
-        void signal_handler_init_function();
-    #endif
-#endif
 
 #endif

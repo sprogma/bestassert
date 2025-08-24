@@ -38,4 +38,6 @@ if (Test-Path $platform/signals.c)
     $build += "$platform/signals.o"
 }
 
+Write-Host "Builded: $build."
+
 gcc $L $build -shared -o "$($IsWindows ?'':'lib')bestassert.$($IsWindows ?'dll':'so')"

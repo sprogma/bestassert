@@ -1,9 +1,11 @@
 -DADD_SIGNAL_HANDLERS
     [windows only]
     add gdb handlers on exceptions.
+    
 -DWIN_CREATE_NEW_CONSOLE_FOR_GDB
     [windows only]
     creates new console then selected option [g]-fall to gdb
+    
 -DKILL_GDB
     [any platform]
     [note:
@@ -20,3 +22,11 @@
     ]
     kill gdb after returning from "fall to gdb" option.
     as effect, for example, "continue" command will close gdb.
+    
+-WIN_RUN_GDB_IN_ERROR_HANDLER
+    [windows only]
+    no, debuger will be run always, but if this option is set,
+    debugger will be called inside SEH handler, and to see real 
+    exception you must use "continue" command.
+    This option can be used, if gdb is not running, 
+    [but this is unusual behaviour, and bug]

@@ -9,36 +9,75 @@
 #include "best_assert_local.h"
 
 
+
+
+static void unquote(char *s)
+{
+    char *z = s;
+    while (*z)
+    {
+        if (*z == '\\')
+        {
+            switch (*++z)
+            {
+                case '\\':
+                    *s++ = '\\'; break;
+                case 'n':
+                    *s++ = '\n'; break;
+                case 'r':
+                    *s++ = '\r'; break;
+                case 't':
+                    *s++ = '\t'; break;
+                case 'v':
+                    *s++ = '\v'; break;
+                case 'a':
+                    *s++ = '\a'; break;
+                case 'e':
+                    *s++ = '\033'; break;
+                case '\"':
+                    *s++ = '\"'; break;
+                case '\'':
+                    *s++ = '\''; break;
+                default:
+                    s++;
+            }
+            z++;
+        }
+        else
+        {
+            *s++ = *z++;
+        }
+    }
+}
+
+
+
     
-void bestassert_request()
+void bestassert_request(struct gdb_instance *gdb)
 {
     char input[2048] = {};
 
     /* read info file */
     sprintf(input, "bt 99\n"
                    "info locals\n");
-    // for (int i = 0; i < n; ++i)
-    // {
-    //     sprintf(input + strlen(input), "continue\n");
-    // }
     sprintf(input + strlen(input), "continue\n");
     
-    bestassert_send_text(input);
+    bestassert_send_text(gdb, input);
 
     /* wait for connection... */
     printf("waiting...\n");
-    bestassert_bestspinlock();
+    bestassert_bestspinlock(gdb);
 }
 
 
-int bestassert_update()
+int bestassert_update(struct gdb_instance *gdb)
 {
     /* read while there is no &bt */
     const char *text = "&\"bt";
     int next_id = 0;
     while (text[next_id] != 0)
     {
-        int ch = bestassert_gdbchar();
+        int ch = bestassert_gdbchar(gdb);
         if (ch != -1)
         {
             if (ch == text[next_id])
@@ -60,43 +99,33 @@ int bestassert_update()
     /* start parsing */
     for (int sd = 0; sd < (int)(sizeof(sections)/sizeof(*sections)); ++sd)
     {
-        while (bestassert_gdbchar() != '\n');
+        while (bestassert_gdbchar(gdb) != '\n');
         printf("------------------------------------------------------------\n");
         printf("                         %s\n", sections[sd]);
         /* parse stack trace */
         while (1)
         {
-            int type = bestassert_gdbchar();
+            int type = bestassert_gdbchar(gdb);
             if (type == '&')
             {
                 break;
             }
             if (type == '~')
             {
-                #ifdef WIN32
-                    char line[1024] = "py -c print('";
-                #else
-                    char line[1024] = "python3 -c print('";
-                #endif
-                int ch = 0, id = strlen(line);
+                char line[1024];
+                int ch = 0, id = 0;
                 while (ch != '\n' && id + 2 < (int)sizeof(line))
                 {
-                    ch = line[id++] = bestassert_gdbchar();
+                    ch = line[id++] = bestassert_gdbchar(gdb);
                 }
-                id -= 2;
-                line[id++] = '\'';
-                line[id++] = ',';
-                line[id++] = 'e';
-                line[id++] = 'n';
-                line[id++] = 'd';
-                line[id++] = '=';
-                line[id++] = '\'';
-                line[id++] = '\"';
-                line[id++] = '\"';
-                line[id++] = '\'';
-                line[id++] = ')';
-                line[id++] = 0;
-                system(line);
+                /* remove last " */
+                #ifdef WIN32
+                    line[id - 3] = 0;
+                #else
+                    line[id - 2] = 0;
+                #endif
+                unquote(line + 1);
+                puts(line + 1);
             }
         }
     }
@@ -106,7 +135,7 @@ int bestassert_update()
         while (1)
         {
             int c;
-            c = bestassert_gdbchar();
+            c = bestassert_gdbchar(gdb);
             // putchar(c)
             cnt++;
             if (c == -1) 
@@ -160,40 +189,40 @@ int bestassert_update()
 
 
 
-void bestassert_reconnect_gdb()
+void bestassert_reconnect_gdb(struct gdb_instance *gdb)
 {
     printf("Starting gdb... [don't look at the logs about closing :)]\n");
 
     /* set console gdb input and output handles on this process handles? */
     #ifdef WIN32
-        if (gdb.hProcess)
+        if (gdb->gdb.hProcess)
     #else
-        if (gdb_pid != 0)
+        if (gdb->gdb_pid != 0)
     #endif
     {
-        bestassert_close_gdb();
+        bestassert_close_gdb(gdb);
         __asm__ __volatile__ ("int $3");
-        bestassert_wait_to_close();
+        bestassert_wait_to_close(gdb);
     }
     
     printf("Running new instance...\n");
     
-    bestassert_run_gdb(1);
+    bestassert_run_gdb(gdb, 1);
 
     printf("waiting...\n");
-    bestassert_bestspinlock();
+    bestassert_bestspinlock(gdb);
     printf("Establish connection...\n");
 }
 
 
 
-void bestassert_close_gdb()
+void bestassert_close_gdb(struct gdb_instance *gdb)
 {
     printf("Close gdb... :)\n");
     {
         char input[1024] = {};
         sprintf(input, "q\n");
-        bestassert_send_text(input);
+        bestassert_send_text(gdb, input);
     }
 }
 

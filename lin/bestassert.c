@@ -13,11 +13,6 @@
 
 
 
-
-pid_t gdb_pid = 0;
-int child_stdin_pipe[2] = {};
-int child_stdout_pipe[2] = {};
-
 /* check /proc/self/status/TracerPid */
 static int check_tracerpid() 
 {
@@ -52,15 +47,16 @@ static int check_tracerpid()
 }
 
 
-static int is_debugger_present_linux(void) 
+static int is_debugger_present_linux() 
 {
     return check_tracerpid();
 }
 
 
 
-void bestassert_bestspinlock()
+void bestassert_bestspinlock(struct gdb_instance *gdb)
 {
+    (void)gdb;
     while (!is_debugger_present_linux())
     {
         usleep(50 * 1000);
@@ -79,27 +75,27 @@ static int make_nonblock(int fd)
 }
 
 
-void bestassert_send_text(const char *commands)
+void bestassert_send_text(struct gdb_instance *gdb, const char *commands)
 {
-    ssize_t nwrited = write(child_stdin_pipe[1], commands, strlen(commands));
+    ssize_t nwrited = write(gdb->child_stdin_pipe[1], commands, strlen(commands));
     (void)nwrited;
 }
 
 
-void bestassert_run_gdb(int user_friendly)
+void bestassert_run_gdb(struct gdb_instance *gdb, int user_friendly)
 {   
     pid_t pid_to_attach = getpid();
 
     /* create pipes... */
-    if (pipe(child_stdin_pipe) != 0) 
+    if (pipe(gdb->child_stdin_pipe) != 0) 
     {
         perror("pipe stdin");
         exit(4);
     }
-    if (pipe(child_stdout_pipe) != 0) 
+    if (pipe(gdb->child_stdout_pipe) != 0) 
     {
         perror("pipe stdin");
-        close(child_stdin_pipe[0]); close(child_stdin_pipe[1]);
+        close(gdb->child_stdin_pipe[0]); close(gdb->child_stdin_pipe[1]);
         exit(4);
     }
     posix_spawn_file_actions_t fa;
@@ -118,7 +114,7 @@ void bestassert_run_gdb(int user_friendly)
         char * const argv[] = {
             "gdb", "attach", string, "-ex", "cont", NULL
         };
-        int err = posix_spawnp(&gdb_pid, "gdb", &fa, NULL, argv, NULL);
+        int err = posix_spawnp(&gdb->gdb_pid, "gdb", &fa, NULL, argv, NULL);
         if (err)
         {
             printf("posix_spawn error %d [%d].\n", err, errno);
@@ -128,17 +124,17 @@ void bestassert_run_gdb(int user_friendly)
     }
     else
     {
-        if (posix_spawn_file_actions_adddup2(&fa, child_stdin_pipe[0], STDIN_FILENO) != 0) 
+        if (posix_spawn_file_actions_adddup2(&fa, gdb->child_stdin_pipe[0], STDIN_FILENO) != 0) 
         {
             perror("adddup2 stdin");
             exit(4);
         }
-        if (posix_spawn_file_actions_adddup2(&fa, child_stdout_pipe[1], STDOUT_FILENO) != 0) 
+        if (posix_spawn_file_actions_adddup2(&fa, gdb->child_stdout_pipe[1], STDOUT_FILENO) != 0) 
         {
             perror("adddup2 stdout");
             exit(4);
         }
-        if (posix_spawn_file_actions_adddup2(&fa, child_stdout_pipe[1], STDERR_FILENO) != 0) 
+        if (posix_spawn_file_actions_adddup2(&fa, gdb->child_stdout_pipe[1], STDERR_FILENO) != 0) 
         {
             perror("adddup2 stderr");
             exit(4);
@@ -147,7 +143,7 @@ void bestassert_run_gdb(int user_friendly)
         char * const argv[] = {
             "gdb", "attach", string, "-ex", "cont", "-i=mi", "--silent", NULL
         };
-        int err = posix_spawnp(&gdb_pid, "gdb", &fa, NULL, argv, NULL);
+        int err = posix_spawnp(&gdb->gdb_pid, "gdb", &fa, NULL, argv, NULL);
         if (err)
         {
             printf("posix_spawn error %d [%d].\n", err, errno);
@@ -157,16 +153,16 @@ void bestassert_run_gdb(int user_friendly)
     
     posix_spawn_file_actions_destroy(&fa);
     
-    close(child_stdin_pipe[0]);
-    close(child_stdout_pipe[1]);
+    close(gdb->child_stdin_pipe[0]);
+    close(gdb->child_stdout_pipe[1]);
 
-    make_nonblock(child_stdout_pipe[0]);
+    make_nonblock(gdb->child_stdout_pipe[0]);
 }
     
-int bestassert_gdbchar()
+int bestassert_gdbchar(struct gdb_instance *gdb)
 {
     char c;
-    int r = read(child_stdout_pipe[0], &c, 1);
+    int r = read(gdb->child_stdout_pipe[0], &c, 1);
     if (r == 1) 
     {
         return c;
@@ -190,17 +186,17 @@ int bestassert_gdbchar()
     }
 }
 
-void bestassert_wait_to_close()
+void bestassert_wait_to_close(struct gdb_instance *gdb)
 {
     /* kill gdb :) */
     #ifdef KILL_GDB
         printf("Bad Penguin is killing gdb :)\n");
-        if (kill(gdb_pid, SIGTERM) == -1)
+        if (kill(gdb->gdb_pid, SIGTERM) == -1)
         {
             printf("Warning: Kill error %d\n", errno);
         }
     #endif
-    gdb_pid = 0;
-    memset(child_stdout_pipe, 0, sizeof(child_stdout_pipe));
-    memset(child_stdin_pipe, 0, sizeof(child_stdin_pipe));
+    gdb->gdb_pid = 0;
+    memset(gdb->child_stdout_pipe, 0, sizeof(gdb->child_stdout_pipe));
+    memset(gdb->child_stdin_pipe, 0, sizeof(gdb->child_stdin_pipe));
 }
