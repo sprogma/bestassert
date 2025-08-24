@@ -12,7 +12,7 @@ function Run-Command
 
 
 # build game :)
-Run-Command -- gcc game/game.c -o bestassert_game$($IsWindows ?'.exe':'') 2>$null
+Run-Command -- gcc -O0 game/game.c -o bestassert_game$($IsWindows ?'.exe':'') 2>$null
 
 # build assert
 $build = @()
