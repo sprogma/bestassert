@@ -57,10 +57,10 @@ static int is_debugger_present_linux()
 void bestassert_bestspinlock(struct gdb_instance *gdb)
 {
     (void)gdb;
-    while (!is_debugger_present_linux())
-    {
-        usleep(50 * 1000);
-    }
+    // while (!is_debugger_present_linux())
+    // {
+    // }
+    usleep(3000 * 1000);
 }
 
 
