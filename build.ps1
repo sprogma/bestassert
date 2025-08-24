@@ -3,7 +3,7 @@ param(
 )
 
 # build game :)
-gcc game/game.c -o inner_game$($IsWindows ?'.exe':'') 2>$null
+gcc game/game.c -o bestassert_game$($IsWindows ?'.exe':'') 2>$null
 
 # build assert
 $build = @()

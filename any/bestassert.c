@@ -170,9 +170,9 @@ int bestassert_update(struct gdb_instance *gdb)
         {
             printf("\n");
             #ifdef WIN32
-                system("inner_game.exe");
+                system("bestassert_game.exe");
             #else
-                system("./inner_game");
+                system("bestassert_game");
             #endif
         }
     }
