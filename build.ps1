@@ -43,4 +43,4 @@ $build += "$platform/signals.o"
 
 
 Write-Host -- gcc $L $build -shared -o "$($IsWindows ?'':'lib')bestassert.$($IsWindows ?'dll':'so')"
-gcc $L $build -shared -o "$($IsWindows ?'':'lib')bestassert.$($IsWindows ?'dll':'so')"
+gcc $L $build -shared "-Wl,--out-implib,libbestassert.lib" -o "$($IsWindows ?'':'lib')bestassert.$($IsWindows ?'dll':'so')"
