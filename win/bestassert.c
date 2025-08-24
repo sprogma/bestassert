@@ -18,7 +18,6 @@ HANDLE hChildStdoutRd = NULL;
 HANDLE hChildStdinWr = NULL;
 
 
-
 void bestassert_bestspinlock()
 {
     while (!IsDebuggerPresent())
@@ -63,6 +62,7 @@ void bestassert_run_gdb(int user_friendly)
     SetHandleInformation(hChildStdoutRd, HANDLE_FLAG_INHERIT, 0);
 
     char app[1024];
+    DWORD flags = 0;
     BOOL inerhit_handles = FALSE;
     STARTUPINFO si = {};
     si.cb = sizeof(si);
@@ -78,10 +78,13 @@ void bestassert_run_gdb(int user_friendly)
     else
     {
         snprintf(app, sizeof(app), "gdb attach %d -ex cont", pid_to_attach);
+        #ifdef CREATE_NEW_CONSOLE_FOR_GDB
+            flags |= CREATE_NEW_CONSOLE;
+        #endif
     }
     
     if (!CreateProcess(NULL, app, NULL, NULL, inerhit_handles,
-                        0, NULL, NULL, &si, &gdb))
+                        flags, NULL, NULL, &si, &gdb))
     {
         printf("CreateProcess failed: %lu\n", GetLastError());
         exit(4);
@@ -120,9 +123,11 @@ int bestassert_gdbchar()
 
 void bestassert_wait_to_close()
 {
-    printf("Bad windows kill gdb :)\n");
-    TerminateProcess(gdb.hProcess, 0);
-    printf("gdb closed. Best Assert section ends.\n\n");
+    #ifdef KILL_GDB
+        printf("Bad windows kill gdb :)\n");
+        TerminateProcess(gdb.hProcess, 0);
+        printf("gdb closed. Best Assert section ends.\n\n");
+    #endif
     gdb = (PROCESS_INFORMATION){};
     hChildStdoutRd = NULL;
     hChildStdinWr = NULL;

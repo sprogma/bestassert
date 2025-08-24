@@ -86,14 +86,9 @@ void bestassert_send_text(const char *commands)
 }
 
 
-void bestassert_run_gdb(int pid_to_attach)
+void bestassert_run_gdb(int user_friendly)
 {   
-    int user_friendly = (pid_to_attach != 0);
-    
-    if (pid_to_attach == 0)
-    {
-        pid_to_attach = getpid();
-    }
+    pid_t pid_to_attach = getpid();
 
     /* create pipes... */
     if (pipe(child_stdin_pipe) != 0) 
@@ -175,7 +170,7 @@ int bestassert_gdbchar()
     if (r == 1) 
     {
         return c;
-    } 
+    }
     else if (r == 0) 
     {
         printf("Error. EOF found.\n");
@@ -198,11 +193,13 @@ int bestassert_gdbchar()
 void bestassert_wait_to_close()
 {
     /* kill gdb :) */
-    printf("Bad Penguin is killing gdb :)\n");
-    if (kill(gdb_pid, SIGTERM) == -1)
-    {
-        printf("Warning: Kill error %d\n", errno);
-    }
+    #ifdef KILL_GDB
+        printf("Bad Penguin is killing gdb :)\n");
+        if (kill(gdb_pid, SIGTERM) == -1)
+        {
+            printf("Warning: Kill error %d\n", errno);
+        }
+    #endif
     gdb_pid = 0;
     memset(child_stdout_pipe, 0, sizeof(child_stdout_pipe));
     memset(child_stdin_pipe, 0, sizeof(child_stdin_pipe));

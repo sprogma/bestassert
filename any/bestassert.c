@@ -160,7 +160,7 @@ int bestassert_update()
 
 
 
-void bestassert_connect_gdb()
+void bestassert_reconnect_gdb()
 {
     printf("Starting gdb... [don't look at the logs about closing :)]\n");
 
@@ -178,11 +178,7 @@ void bestassert_connect_gdb()
     
     printf("Running new instance...\n");
     
-    #ifdef WIN32
-        bestassert_run_gdb(GetCurrentProcessId());
-    #else
-        bestassert_run_gdb(getpid());
-    #endif
+    bestassert_run_gdb(1);
 
     printf("waiting...\n");
     bestassert_bestspinlock();

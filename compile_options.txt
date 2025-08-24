@@ -1,0 +1,22 @@
+-DADD_SIGNAL_HANDLERS
+    [windows only]
+    add gdb handlers on exceptions.
+-DWIN_CREATE_NEW_CONSOLE_FOR_GDB
+    [windows only]
+    creates new console then selected option [g]-fall to gdb
+-DKILL_GDB
+    [any platform]
+    [note:
+        on linux, if this option is _DISABLED_,
+        then your terminal makes not sensible after
+        program end.
+        [kill gdb to restore it],
+        on windows to prevent from this one must use
+            -DWIN_CREATE_NEW_CONSOLE_FOR_GDB
+    ]
+    [note: 
+        on windows to use this option, you must use
+            -DWIN_CREATE_NEW_CONSOLE_FOR_GDB option.
+    ]
+    kill gdb after returning from "fall to gdb" option.
+    as effect, for example, "continue" command will close gdb.

@@ -25,4 +25,13 @@ void bestassert_send_text(const char *);
 int bestassert_gdbchar();
 void bestassert_bestspinlock();
 
+
+
+#ifdef ADD_SIGNAL_HANDLERS
+    #ifdef WIN32
+        __attribute__((constructor))
+        void signal_handler_init_function();
+    #endif
+#endif
+
 #endif
